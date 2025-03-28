@@ -1,0 +1,403 @@
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Object\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c LARGE BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing\main.lst) OBJECT(.\O
+                    -bject\main.obj)
+
+line level    source
+
+   1          #include "reg52.h"              // ÒýÈëÓë51µ¥Æ¬»úÏà¹ØÓ²¼þ¼Ä´æÆ÷¶¨ÒåºÍ¹¦ÄÜºê
+   2          // ºê¶¨Òå
+   3          typedef unsigned int u16;                  // 16 Î»ÎÞ·ûºÅÕûÊý
+   4          typedef unsigned char u8;                  // 8Î»ÎÞ·ûºÅÕûÊý,charÕ¼ 1 ¸ö×Ö½Ú 
+   5          
+   6          // ±àÒëÆ÷´ÓÉÏµ½ÏÂ½âÎö´úÂë£¬¹ÌÔ¤¶¨Òåº¯ÊýÉùÃ÷
+   7          void delay_10us(u16 ten_us);
+   8          void seg_display(unsigned char which_seg, Number, point); 
+   9          void keyWork();              //¾ØÕó¼üÅÌÉ¨ÃèÓë´¦Àí
+  10          char pipline_get(int num);      //ÊýÂë¹ÜÎ»´¦Àí,½«Ã¿Î»ÊýÖµ´æÈëSeg_Buf[]
+  11          
+  12          
+  13          
+  14          
+  15          
+  16          // ÊýÂë¹ÜÄ£¿é
+  17          #define SMG_A_DP_PORT  P0 //8Î»²¢ÐÐI/O¶Ë¿Ú±íÊ¾µ¥Æ¬»úP0.0 ÖÁ P0.7¹²8¸öÒý½Å       // ¶ÎÑ¡-ÏÔÊ¾Ê²Ã´
+  18          sbit LSA = P2^2;                                                                                    // Î»Ñ¡-ÏÔÊ¾ÄÄ¸ö
+  19          sbit LSB = P2^3;
+  20          sbit LSC = P2^4;
+  21          u8 seg_pipline[8] ={0,4,4,1,6,5,5,0};   // Ñ§ºÅ´æ´¢                                          
+  22          char seg_point[8] ={0,0,0,0,0,0,0,0};   // ÊýÂë¹ÜÐ¡Êýµã                                               
+  23          unsigned char gsmg_code[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x00, 0x40};     
+             -         //0,1,2,3,4,5,6,7,8,9,Ï¨Ãð,¸ººÅ
+  24          void delay_10us(u16 ten_us) {
+  25   1          while (ten_us--);
+  26   1      }
+  27          //ÊýÂë¹ÜÓÉ a, b, c, d, e, f, g Æß¶Î LED ºÍ Ò»¸öÐ¡Êýµã dp ×é³É
+  28          void seg_display(unsigned char which_seg, Number, point){
+  29   1          switch (which_seg) {                            //Î»Ñ¡£¬´Ó×óÖÃÓÒ
+  30   2              case 0: LSC = 1; LSB = 1; LSA = 1; break;  //×î×óµÚÒ»Î»ÊýÂë¹Ü
+  31   2              case 1: LSC = 1; LSB = 1; LSA = 0; break;  //×î×óµÚ¶þÎ»ÊýÂë¹Ü
+  32   2              case 2: LSC = 1; LSB = 0; LSA = 1; break;  //×î×óµÚÈýÎ»ÊýÂë¹Ü
+  33   2              case 3: LSC = 1; LSB = 0; LSA = 0; break;  //×î×óµÚËÄÎ»ÊýÂë¹Ü
+  34   2              case 4: LSC = 0; LSB = 1; LSA = 1; break;  //×î×óµÚÎåÎ»ÊýÂë¹Ü
+  35   2              case 5: LSC = 0; LSB = 1; LSA = 0; break;  //µ¹ÊýµÚÈý¸öÊýÂë¹Ü
+  36   2              case 6: LSC = 0; LSB = 0; LSA = 1; break;  //µ¹ÊýµÚ¶þ¸öÊýÂë¹Ü
+  37   2              case 7: LSC = 0; LSB = 0; LSA = 0; break;  //µ¹ÊýµÚÒ»¸öÊýÂë¹Ü
+  38   2          }
+  39   1              if(point)                                                                            //¶ÎÑ¡
+  40   1                      P0 = gsmg_code[Number]|0x80;    // Î»»ò-¶ÎÂëµÚ8Î»Îª1-µãÁÁÄ³Î»ÊýÂë¹ÜÐ¡Êýµã
+  41   1              else
+  42   1                      P0 = gsmg_code[Number]; 
+  43   1              delay_10us(50);                                 // ÑÓÊ±£¬È·±£ÏÔÊ¾ÎÈ¶¨
+  44   1              P0=0x00;                                                        // ÏûÓ°£¬Ï¨Ãðµ±Ç°Î»ÒÔ±ÜÃâÖØÓ°
+  45   1      }
+  46          
+  47          
+  48          
+  49          
+  50          
+  51          
+  52          
+  53          
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 2   
+
+  54          
+  55          
+  56          
+  57          // ·äÃùÆ÷Ä£¿é
+  58          // ÎÞÔ´·äÃùÆ÷-Íâ²¿ÐÅºÅÇý¶¯£¬Ò»¶¨ÆµÂÊ·½²¨ÐÅºÅºó£¬·äÃùÆ÷ËæÐÅºÅ·¢³ö¶ÔÓ¦ÆµÂÊÉùÒô
+  59          // Freq Ô½Ð¡£¬count Ô½´ó£¬·½²¨ÑÓÊ±Ô½³¤ÆµÂÊÔ½µÍ£¬Êä³öÐÅºÅÆµÂÊÔ½Ð¡£¬ÉùÒôÔ½µÍ³Á
+  60          sbit BEEP = P2^5; 
+  61          void Beep(unsigned int Freq)           //ÆµÂÊÓëÑÓÊ±³É·´±È
+  62          {
+  63   1                      unsigned int i=200;              
+  64   1                      unsigned int count=0;
+  65   1                      count = 6666 / Freq;       // ½«ÆµÂÊ×ª»»ÎªÑÓÊ±Öµ£¨Ã¿¸öÑÓÊ±µ¥Î» 10 Î¢Ãë£©
+  66   1                      while(i--)
+  67   1                      {
+  68   2                              BEEP = !BEEP;              // ·­×ª BEEP Òý½ÅµçÆ½£¬²úÉú·½²¨
+  69   2                              delay_10us(count);         // ÑÓÊ±£¬¿ØÖÆ·½²¨ÖÜÆÚ
+  70   2              }
+  71   1      }
+  72          
+  73          
+  74          
+  75          
+  76          
+  77          
+  78          // ¾ØÕó¼üÅÌÄ£¿é
+  79          sbit P0_0 = P0^0;sbit P0_1 = P0^1;sbit P0_2 = P0^2;sbit P0_3 = P0^3;sbit P0_4 = P0^4;sbit P0_5 = P0^5;sbit
+             - P0_6 = P0^6;sbit P0_7 = P0^7;
+  80          sbit P1_0 = P1^0;sbit P1_1 = P1^1;sbit P1_2 = P1^2;sbit P1_3 = P1^3;sbit P1_4 = P1^4;sbit P1_5 = P1^5;sbit
+             - P1_6 = P1^6;sbit P1_7 = P1^7;
+  81          sbit P2_0 = P2^0;sbit P2_1 = P2^1;sbit P2_2 = P2^2;sbit P2_3 = P2^3;sbit P2_4 = P2^4;sbit P2_5 = P2^5;sbit
+             - P2_6 = P2^6;sbit P2_7 = P2^7;
+  82          sbit P3_0 = P3^0;sbit P3_1 = P3^1;sbit P3_2 = P3^2;sbit P3_3 = P3^3;sbit P3_4 = P3^4;sbit P3_5 = P3^5;sbit
+             - P3_6 = P3^6;sbit P3_7 = P3^7;
+  83          // P1_3¡¢P1_2¡¢P1_1¡¢P1_0¾ùÎª¸ßµçÆ½£¬ÔÙ½«P1_3ÉèÖÃÎª0£¬ÒÀ´Î¼ì²éP1_7¡¢P1_6¡¢P1_5¡¢P1_4£¬·Ö±ð¶ÔÓ¦S1¡¢S5¡¢S9¡¢
+             -S13£»
+  84          // P1_3¡¢P1_2¡¢P1_1¡¢P1_0¾ùÎª¸ßµçÆ½£¬ÔÙ½«P1_2ÉèÖÃÎª0£¬ÒÀ´Î¼ì²éP1_7¡¢P1_6¡¢P1_5¡¢P1_4£¬·Ö±ð¶ÔÓ¦S2¡¢S6¡¢S10¡
+             -¢S14£»
+  85          // P1_3¡¢P1_2¡¢P1_1¡¢P1_0¾ùÎª¸ßµçÆ½£¬ÔÙ½«P1_1ÉèÖÃÎª0£¬ÒÀ´Î¼ì²éP1_7¡¢P1_6¡¢P1_5¡¢P1_4£¬·Ö±ð¶ÔÓ¦S3¡¢S7¡¢S11¡
+             -¢S15;
+  86          // P1_3¡¢P1_2¡¢P1_1¡¢P1_0¾ùÎª¸ßµçÆ½£¬ÔÙ½«P1_0ÉèÖÃÎª0£¬ÒÀ´Î¼ì²éP1_7¡¢P1_6¡¢P1_5¡¢P1_4£¬·Ö±ð¶ÔÓ¦S4¡¢S8¡¢S12¡
+             -¢S16¡£
+  87          // P1_3¡¢P1_2¡¢P1_1¡¢P1_0ÒÀ´ÎÉèÖÃµÍµçÎ»ÆäÓà¸ßµ¥Î»ÒÔÒÀ´ÎÉ¨ÃèÃ¿ÁÐ£¬P1_7¡¢P1_6¡¢P1_5¡¢P1_4ÒÀ´Î¼ì²éÃ¿ÐÐÉ¨ÃèÊÇ·
+             -ñÓÐµÍµçÎ»£¬8¶Ë¿Ú³É¹¦¼ì²é16¸ö°´                
+  88          // sbit P0_0 = P0^0; P0 ÊÇ 8051 µ¥Æ¬»úµÄ P0 ¶Ë¿Ú¼Ä´æÆ÷£¬±í¼üÊ¾Ò»¸ö×Ö½Ú£¨8 Î»£©£¬^ ±íÊ¾Î»Ñ°Ö·ÔËËã·û
+  89          void Delay(unsigned int xms)                    // ·Ç¾«È·µÄ¡¢Èí¼þÊµÏÖµÄ×èÈûÊ½ÑÓÊ±                                          
+  90          {                                                          
+  91   1              unsigned char i, j;
+  92   1              while(xms--)
+  93   1              {
+  94   2                      i = 2;
+  95   2                      j = 239;
+  96   2                      do
+  97   2                      {
+  98   3                              while (--j);
+  99   3                      } while (--i);
+ 100   2              }
+ 101   1      }
+ 102          unsigned char MatrixKey()                               //°´¼ü¶ÔÓ¦
+ 103          {
+ 104   1          unsigned char KeyNumber = 0; //´æ´¢°´¼ü±àºÅ£¬³õÊ¼ÖµÎª 0    
+ 105   1          P1 = 0xFF;  P1_3 = 0;   //¿ªÊ¼É¨ÃèµÚÒ»ÁÐ
+ 106   1          if (P1_7 == 0)         //P1_7µÍµçÆ½
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 3   
+
+ 107   1          {
+ 108   2              Delay(20);           //µÈ´ý 20 ºÁÃë£¬Ïû³ý»úÐµ´¥µãµ¯ÐÔ×÷ÓÃÒ»Á¬´®Í¨¶Ï±ä»¯                 
+ 109   2              while (P1_7 == 0);   //µÈ´ý°´¼üËÉ¿ª£¬·ÀÖ¹¸ÉÈÅÏÂ´ÎÉ¨Ãè
+ 110   2                KeyNumber = 1;     //°´ÏÂÊý×Ö¼ü 1
+ 111   2          }
+ 112   1          if (P1_6 == 0){        //P1_6µÍµçÆ½    
+ 113   2              Delay(20); while (P1_6 == 0) KeyNumber = 5;
+ 114   2          }
+ 115   1          if (P1_5 == 0){        //P1_5µÍµçÆ½    
+ 116   2              Delay(20); while (P1_5 == 0) KeyNumber = 9; 
+ 117   2          }
+ 118   1          if (P1_4 == 0){        //P1_4µÍµçÆ½    
+ 119   2              Delay(20); while (P1_4 == 0) KeyNumber = 13;
+ 120   2          }
+ 121   1          P1 = 0xFF;  P1_2 = 0;  //½« P1_2 ÉèÎªµÍµçÆ½£¬¿ªÊ¼É¨ÃèµÚ¶þÁÐ
+ 122   1          if (P1_7 == 0){          
+ 123   2              Delay(20); while (P1_7 == 0); KeyNumber = 2; 
+ 124   2          }
+ 125   1          if (P1_6 == 0){
+ 126   2              Delay(20); while (P1_6 == 0); KeyNumber = 6; 
+ 127   2          }
+ 128   1          if (P1_5 == 0){    
+ 129   2              Delay(20); while (P1_5 == 0); KeyNumber = 10; 
+ 130   2          }
+ 131   1          if (P1_4 == 0){
+ 132   2              Delay(20); while (P1_4 == 0); KeyNumber = 14; 
+ 133   2          }
+ 134   1          P1 = 0xFF; P1_1 = 0; 
+ 135   1          if (P1_7 == 0){
+ 136   2              Delay(20); while (P1_7 == 0); KeyNumber = 3; 
+ 137   2          }
+ 138   1          if (P1_6 == 0){
+ 139   2              Delay(20); while (P1_6 == 0); KeyNumber = 7; 
+ 140   2          }
+ 141   1          if (P1_5 == 0) 
+ 142   1          {
+ 143   2              Delay(20); while (P1_5 == 0); KeyNumber = 11; 
+ 144   2          }
+ 145   1          if (P1_4 == 0){
+ 146   2              Delay(20); while (P1_4 == 0); KeyNumber = 15; 
+ 147   2          }
+ 148   1          P1 = 0xFF;  P1_0 = 0; 
+ 149   1          if (P1_7 == 0){
+ 150   2              Delay(20); while (P1_7 == 0); KeyNumber = 4; 
+ 151   2          }
+ 152   1          if (P1_6 == 0){
+ 153   2              Delay(20); while (P1_6 == 0); KeyNumber = 8; 
+ 154   2          }
+ 155   1          if (P1_5 == 0){
+ 156   2              Delay(20); while (P1_5 == 0); KeyNumber = 12; 
+ 157   2          }
+ 158   1          if (P1_4 == 0){
+ 159   2              Delay(20); while (P1_4 == 0); KeyNumber = 16; 
+ 160   2          }
+ 161   1          return KeyNumber;     //·µ»Ø¼ì²âµ½µÄ°´¼ü±àºÅ
+ 162   1      }
+ 163          
+ 164          
+ 165          
+ 166          
+ 167          // µãÕóÄ£¿é
+ 168          #define LEDDZ_COL_PORT  P0            //µãÕóÁÐ¿ØÖÆ¶Ë¿Ú
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 4   
+
+ 169          sbit SRCLK = P3^6;                    //ÒÆÎ»¼Ä´æÆ÷Ê±ÖÓÊäÈë
+ 170          sbit sRCLK = P3^5;                        //´æ´¢¼Ä´æÆ÷Ê±ÖÓÊäÈë
+ 171          sbit SER   = P3^4;                        //´®ÐÐÊý¾ÝÊäÈë
+ 172          u8 Dot_Buf[7][8] = {
+ 173          {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // ²»ÏÔÊ¾   
+ 174          {0x00, 0x18, 0x18, 0x7e, 0x7e, 0x18, 0x18, 0x00},   // +                        
+ 175          {0x00, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00},   // -                        
+ 176          {0x00, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x00},   // x                        
+ 177          {0x00, 0x18, 0x18, 0x5a, 0x5a, 0x18, 0x18, 0x00},   // /                        
+ 178          {0x00, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x00},   // =                        
+ 179          {0x7e, 0xc3, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81}};  // C                        
+ 180          u8 Dot_Pos[8]= {0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe};  //ÁÐË¢ÐÂ
+ 181          void hc595_write_data(u8 dat)                                                                  
+ 182          {
+ 183   1              u8 i=0;                                                                                         
+ 184   1              for(i=0;i<8;i++){         //Ñ­»·8´Î½«Ò»×Ö½ÚÐ´Èë¼Ä´æÆ÷   
+ 185   2                      SER=dat>>7;           //ÒÆÎ»²Ù×÷ÌáÈ¡×î¸ßÎ»¼´7
+ 186   2                      dat<<=1;              //µÍÎ»ÒÆÖÁ¸ßÎ»
+ 187   2                      SRCLK=0;
+ 188   2                      delay_10us(1);
+ 189   2                      SRCLK=1;
+ 190   2                      delay_10us(1);        //ÒÆÎ»¼Ä´æÆ÷Ê±ÖÓÉÏÉýÑØÊý¾Ý´æÈë¼Ä´æÆ÷
+ 191   2              }
+ 192   1              sRCLK=1;                  //´æ´¢¼Ä´æÆ÷Ê±ÖÓÉÏÉýÑØÏÔÊ¾¼Ä´æÆ÷Êý¾Ý
+ 193   1              delay_10us(1);            //ÑÓÊ±£¬È·±£Ê±ÖÓÐÅºÅÎÈ¶¨
+ 194   1              sRCLK=0;                  //ÉèÖÃ´æ´¢Ê±ÖÓÎªµÍµçÆ½
+ 195   1      }
+ 196          void dotMatrix(char which){     
+ 197   1      u8 i=0, k=0;
+ 198   1      for(k=0;k<30;k++)                // ¶à´ÎË¢ÐÂµãÕóÏÔÊ¾£¬ÔöÇ¿ÊÓ¾õÁÁ¶È¼°ÏÔÊ¾Ð§¹û
+ 199   1                       for(i=0;i<8;i++)
+ 200   1                       {                                                  
+ 201   2                              LEDDZ_COL_PORT=Dot_Pos[i];             //µÚiÁÐµÍµçÎ»
+ 202   2                              hc595_write_data(Dot_Buf[which][i]);   //ÏÔÊ¾which·ûºÅµÚiÁÐÊý¾Ý
+ 203   2                              delay_10us(100);                       //ÑÓÊ±µÈ´ýÏÔÊ¾ÎÈ¶¨
+ 204   2                              hc595_write_data(0x00);                //ÏûÓ°   
+ 205   2                       }      
+ 206   1      }       
+ 207          
+ 208          
+ 209          
+ 210          
+ 211          
+ 212          // ËÄÔòÔËËãÄ£¿é
+ 213          double number = 0, lastNum = 0;           // µ±Ç°Êý×Ö ÉÏÒ»Êý×Ö
+ 214          char operator = 0;                          // ´æ´¢ÔËËã·ûºÅ
+ 215          unsigned char Key=0;                                             // ´æ´¢¼üÖµ
+ 216          bit startFlag = 0, signFlag = 0;                 // ¿ªÊ¼±êÖ¾-·ûºÅ±êÖ¾
+ 217          void keyWork()
+ 218          {
+ 219   1              char i = 0;                                                              
+ 220   1              if((Key == 16)&&(startFlag == 0))         // ·äÃùÆ÷¼ÆËãÆ÷¿ªÆô
+ 221   1              {
+ 222   2                      for(i=0; i<8; i++){
+ 223   3                              seg_pipline[i] = 10;              // ÊýÂë¹ÜÇåÁã
+ 224   3                              seg_point[i] = 0;                 // Ð¡ÊýÎ»ÇåÁã
+ 225   3                      }
+ 226   2                      startFlag = 1;                        // ±êÖ¾·äÃùÆ÷¼ÆËãÆ÷¿ªÆô
+ 227   2              }       
+ 228   1              if(startFlag)
+ 229   1                      switch(Key){
+ 230   2                              case 1:                           // ÒÆÎ»ÏÔÊ¾²Ù×÷Êý´æ´¢-´¦Àí-µÍ³Á 
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 5   
+
+ 231   2                                              number = number * 10 + 1; pipline_get(number); Beep(250);
+ 232   2                              break;                          
+ 233   2                              case 2:
+ 234   2                                              number = number * 10 + 2; pipline_get(number); Beep(300);
+ 235   2                              break;                          
+ 236   2                              case 3:
+ 237   2                                              number = number * 10 + 3; pipline_get(number); Beep(330);
+ 238   2                              break;                          
+ 239   2                              case 4:
+ 240   2                                              number = number * 10 + 4; pipline_get(number); Beep(360);
+ 241   2                              break;
+ 242   2                              case 5:
+ 243   2                                              number = number * 10 + 5; pipline_get(number); Beep(390);
+ 244   2                              break;                          
+ 245   2                              case 6:
+ 246   2                                              number = number * 10 + 6; pipline_get(number); Beep(420);
+ 247   2                              break;                          
+ 248   2                              case 7:
+ 249   2                                              number = number * 10 + 7; pipline_get(number); Beep(450);
+ 250   2                              break;                          
+ 251   2                              case 8:
+ 252   2                                              number = number * 10 + 8; pipline_get(number); Beep(520);
+ 253   2                              break;                          
+ 254   2                              case 9:
+ 255   2                                              number = number * 10 + 9; pipline_get(number); Beep(555);
+ 256   2                              break;                          
+ 257   2                              case 10:
+ 258   2                                              number = number * 10 + 0; pipline_get(number); Beep(666);
+ 259   2                              break;                          
+ 260   2                              case 11:
+ 261   2                                              if(!signFlag){ //ÔËËã·ûºÅÊäÈë£¬±£´æÇ°Ò»²Ù×÷Êý£¬¿ªÊ¼ÐÂ²Ù×÷Êý
+ 262   3                                                      lastNum = number; number = 0; signFlag = 1;
+ 263   3                                              } operator = '+'; Beep(700);
+ 264   2                              break;                          
+ 265   2                              case 12:
+ 266   2                                              if(!signFlag){
+ 267   3                                                      lastNum = number; number = 0; signFlag = 1;
+ 268   3                                              } operator = '-'; Beep(780);
+ 269   2                              break;                          
+ 270   2                              case 13:
+ 271   2                                              if(!signFlag){
+ 272   3                                                      lastNum = number; number = 0; signFlag = 1;
+ 273   3                                              }
+ 274   2                                              operator = '*'; Beep(880);
+ 275   2                              break;
+ 276   2                              case 14:
+ 277   2                                              if(!signFlag){
+ 278   3                                                      lastNum = number; number = 0; signFlag = 1;
+ 279   3                                              }
+ 280   2                                              operator = '/'; Beep(1000);
+ 281   2                              break;                          
+ 282   2                              case 15:
+ 283   2                                              if(signFlag){     
+ 284   3                                                      signFlag = 0;
+ 285   3                                                      switch(operator){
+ 286   4                                                              case '+':
+ 287   4                                                                      number = lastNum + number; pipline_get(number);
+ 288   4                                                              break;
+ 289   4                                                              case '-':
+ 290   4                                                                      number = lastNum - number; pipline_get(number);
+ 291   4                                                              break;
+ 292   4                                                              case '*':
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 6   
+
+ 293   4                                                                      number = lastNum * number; pipline_get(number);
+ 294   4                                                              break;
+ 295   4                                                              case '/':               //½ö/ÓÃÐ¡ÊýÎ»
+ 296   4                                                                      number = lastNum / number * 1.0; // Ë«¾«¶ÈÐÍ
+ 297   4                                                                      pipline_get(number*10); // Ð¡ÊýÎ»×ªÕûÊýÒÔÏÔÊ¾
+ 298   4                                                                      // ÕûÊýÎ»Îª0£¬Ê¹ÆäÏÔÊ¾µÄ³öÀ´
+ 299   4                                                                      if((int)number%10 == 0) seg_pipline[6] = 0;             
+ 300   4                                                                      seg_point[6] = 1;                       //±£Áô1Î»Ð¡Êý
+ 301   4                                                              break;
+ 302   4                                                      }
+ 303   3                                                      lastNum = number; // ±£´æ×ó±ß²Ù×÷Êý
+ 304   3                                                      number = 0;              // ±£´æ½á¹û                                            
+ 305   3                                              }
+ 306   2                                              else {
+ 307   3                                                      number = lastNum;       // ±£³Ö²»±ä                                                              
+ 308   3                                                      pipline_get(number);
+ 309   3                                              }Beep(1100);
+ 310   2                              break;                                                  
+ 311   2                              case 16:
+ 312   2                                      for(i=0; i<8; i++){         // ÇåÁã
+ 313   3                                              seg_pipline[i]=10; seg_point[i]=0; number=0; signFlag=0;
+ 314   3                                      }Beep(1200);
+ 315   2                              break;
+ 316   2                      }
+ 317   1      }
+ 318          char pipline_get(int num)           // Ê¹num×ª´ÓÓÒ±ßÖÃ×ó,Ã¿´Î´æ×îµÍÎ»
+ 319          {
+ 320   1              char i = 0, j = 0;
+ 321   1              if(num >= 0){
+ 322   2                      seg_pipline[7] = (int)num%10;       // ÕûÊý×îµÍÎ»  
+ 323   2                      for(i = 6; i>=0; i--){
+ 324   3                              num /= 10;                      // È¥³ý×îµÍÎ»
+ 325   3                              if(num == 0){
+ 326   4                                      for(j=i; j>=0; j--) seg_pipline[j] = 10;        //ÆäÓàÏ¨Ãð
+ 327   4                                      return(i);
+ 328   4                              }
+ 329   3                              seg_pipline[i] = (int)num % 10; // ÕûÊý×îµÍÎ»   
+ 330   3                      }
+ 331   2              }
+ 332   1              else{
+ 333   2                      i = pipline_get(number*(-1));                   //¸ºÊý´¦Àí 
+ 334   2                      seg_pipline[i] = 11;                                    //×î×ó±ßÎ»Îª¸ººÅ
+ 335   2              }
+ 336   1      }
+ 337          
+ 338          
+ 339          // Ö÷º¯ÊýÄ£¿é
+ 340          void main()
+ 341          {
+ 342   1              char i=0, which=0;
+ 343   1              dotMatrix(0);
+ 344   1              while(1)                                  //ÂÖÑ¯Í¨ÐÅ
+ 345   1              {                                                       
+ 346   2                      Key = MatrixKey();                                      //¾ØÕó¼üÅÌÄ£¿é-ÏìÓ¦¼üÈë 
+ 347   2                      keyWork();                                                      //ËÄÔòÔËËãÄ£¿é-ËÄÔòÔËËã
+ 348   2                      for(i = 0; i<8; i++)                                    //ÊýÂë¹ÜÄ£¿é-ÊýÂë¹ÜÏÔÊ¾
+ 349   2                              seg_display(i, seg_pipline[i],seg_point[i]);
+ 350   2                      if(Key>=11 && Key<=16)                          //µãÕóÄ£¿é-ÔËËã·ûºÅÏÔÊ¾
+ 351   2                      {
+ 352   3                              which = Key - 10;
+ 353   3                              dotMatrix(which);                  
+ 354   3                      }
+C51 COMPILER V9.01   MAIN                                                                  12/05/2024 16:43:13 PAGE 7   
+
+ 355   2              }
+ 356   1      }       
+*** WARNING C291 IN LINE 336 OF MAIN.C: not every exit path returns a value
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2031    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    102      11
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
